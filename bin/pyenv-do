@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+#
+# Summary: Improvement of `pyenv exec`
+#
+# Usage: pyenv do [-e|--env <version>] <command> [args...]
+#
+#   -e/--env  Version (or environment name in pyenv-managed virtualenv)
+#
+# Runs an executable by first preparing PATH so that the selected Python
+# version's `bin' directory is at the front.
+#
+# For example, if the currently selected Python version is 2.7.6:
+#   $ pyenv do --env 3.9.8 python -V
+#   Python 3.9.8
+#
+# is equivalent to:
+#   PYENV_VERSION=3.9.8 pyenv exec python -V
+
+set -e
+[ -n "$PYENV_DEBUG" ] && set -x
+
+# Provide pyenv completions
+if [ "$1" = "--complete" ]; then
+  # FIXME: Help wanted to implement this
+  echo --env
+  pyenv-versions --bare
+  pyenv-shims --short
+  exit
+fi
+
+PYENV_VERSION="$(pyenv-version-name)"
+if [ "$1" = "--env" ] || [ "$1" = "-e" ]; then shift 1
+  PYENV_VERSION="$1"
+  shift 1 || :  # shift 1 may fail if there is no argument
+fi
+
+PYENV_COMMAND="$1"
+if [ -z "$PYENV_COMMAND" ]; then
+  pyenv-help --usage do >&2
+  exit 1
+fi
+shift 1
+
+export PYENV_VERSION
+pyenv-exec "$PYENV_COMMAND" "$@"
